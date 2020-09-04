@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocalChachaAdminApi", "LocalChachaTester\LocalChachaAdminApi.csproj", "{27E6D54A-88DC-4F7A-9BDC-92C19239D639}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocalChachaAdminApi", "LocalChachaAdminApi\LocalChachaAdminApi.csproj", "{5D5B0FB9-7F85-4868-A3E6-BA1BBC52BD1D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{27E6D54A-88DC-4F7A-9BDC-92C19239D639}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{27E6D54A-88DC-4F7A-9BDC-92C19239D639}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{27E6D54A-88DC-4F7A-9BDC-92C19239D639}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{27E6D54A-88DC-4F7A-9BDC-92C19239D639}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D5B0FB9-7F85-4868-A3E6-BA1BBC52BD1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D5B0FB9-7F85-4868-A3E6-BA1BBC52BD1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D5B0FB9-7F85-4868-A3E6-BA1BBC52BD1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D5B0FB9-7F85-4868-A3E6-BA1BBC52BD1D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
