@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 
-namespace LocalChachaAdminApi.Interfaces
+namespace LocalChachaAdminApi.Core.Interfaces
 {
     public interface IBulkInsertService
     {
-        public Task InsertBulkData();
+        Task InsertBulkData();
     }
 }

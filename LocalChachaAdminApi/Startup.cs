@@ -1,5 +1,7 @@
-using LocalChachaAdminApi.Interfaces;
-using LocalChachaAdminApi.Services;
+using LocalChachaAdminApi.AutoMapperConfiguration;
+using LocalChachaAdminApi.Core.Interfaces;
+using LocalChachaAdminApi.Core.Services;
+using LocalChachaAdminApi.Filters;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -7,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using System;
+using AutoMapper;
 
 namespace LocalChachaAdminApi
 {
@@ -27,11 +30,22 @@ namespace LocalChachaAdminApi
             //services
             services.AddTransient<IBulkInsertService, BulkInsertService>();
             services.AddTransient<IS3BucketService, S3BucketService>();
+            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<ITokenService, TokenService>();
+            services.AddTransient<IHttpService, HttpService>();
+            services.AddTransient<IMerchantService, MerchantService>();
 
             services.AddHttpClient("localChacha", c =>
             {
                 c.BaseAddress = new Uri(Configuration.GetValue<string>("localChachaUrl"));
             });
+
+            services.AddMvc(options =>
+            {
+                options.Filters.Add<ApiAuthorizationFilter>();
+            });
+
+            services.AddAutoMapper(typeof(AutoMapperConfig).Assembly);
 
             services.AddSwaggerGen();
             services.AddSwaggerGen(c =>
@@ -40,17 +54,14 @@ namespace LocalChachaAdminApi
                 {
                     Version = "v1",
                     Title = "LocalChachaAdmin API",
-                    //Contact = new OpenApiContact
-                    //{
-                    //    Name = "Shayne Boyer",
-                    //    Email = string.Empty,
-                    //    Url = new Uri("https://twitter.com/spboyer"),
-                    //},
-                    //License = new OpenApiLicense
-                    //{
-                    //    Name = "Use under LICX",
-                    //    Url = new Uri("https://example.com/license"),
-                    //}
+                });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                    Name = "Authorization",
+                    Scheme = "bearer",
+                    Type = SecuritySchemeType.Http
                 });
             });
         }
@@ -61,6 +72,7 @@ namespace LocalChachaAdminApi
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseCors(builder => builder.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
             }
 
             app.UseSwagger();

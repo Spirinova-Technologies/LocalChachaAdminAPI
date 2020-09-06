@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace LocalChachaAdminApi.Models
+namespace LocalChachaAdminApi.Core.Models
 {
     public class CategoryRequestModel
     {

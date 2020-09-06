@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace LocalChachaAdminApi.Models
+namespace LocalChachaAdminApi.Core.Models
 {
     public class MerchantRequestModel
     {
@@ -42,6 +42,12 @@ namespace LocalChachaAdminApi.Models
 
         [JsonProperty("type")]
         public string Type { get; set; }
+
+        [JsonProperty("categoryFileName")]
+        public string CategoryFileName { get; set; }
+
+        [JsonProperty("productFileName")]
+        public string ProductFileName { get; set; }
     }
     
 }

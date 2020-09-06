@@ -1,25 +1,21 @@
-﻿using LocalChachaAdminApi.Interfaces;
-using LocalChachaAdminApi.Models;
+﻿using LocalChachaAdminApi.Core.Interfaces;
+using LocalChachaAdminApi.Core.Models;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace LocalChachaAdminApi.Services
+namespace LocalChachaAdminApi.Core.Services
 {
     public class BulkInsertService : IBulkInsertService
     {
-        private HttpClient httpClient;
+        private readonly IHttpService httpService;
         private readonly IS3BucketService s3BucketService;
 
-        public BulkInsertService(IHttpClientFactory httpClientFactory, IS3BucketService s3BucketService)
+        public BulkInsertService(IS3BucketService s3BucketService, IHttpService httpService)
         {
-            httpClient = httpClientFactory.CreateClient("localChacha");
+            this.httpService = httpService;
             this.s3BucketService = s3BucketService;
         }
 
@@ -49,7 +45,7 @@ namespace LocalChachaAdminApi.Services
             var merchantResponses = new List<MerchantResponseModel>();
             foreach (var merchant in merchants)
             {
-                var merchantResponse = await GetHttpClientResponse<MerchantResponseModel>("api/merchants/create", merchant, HttpMethod.Post);
+                var merchantResponse = await httpService.GetHttpClientResponse<MerchantResponseModel>("api/merchants/create", merchant, HttpMethod.Post);
 
                 if (merchantResponse.Merchant != null)
                     merchantResponses.Add(merchantResponse);
@@ -68,7 +64,7 @@ namespace LocalChachaAdminApi.Services
             {
                 categoryRequest.MerchantId = merchantId;
 
-                var categoriesResponse = await GetHttpClientResponse<CategoryResponseModel>("api/categories/create", categoryRequest, HttpMethod.Post, true, token);
+                var categoriesResponse = await httpService.GetHttpClientResponse<CategoryResponseModel>("api/categories/create", categoryRequest, HttpMethod.Post, true, token);
 
                 if (categoriesResponse.Status == 1)
                     categoriesResponses.Add(categoriesResponse);
@@ -98,34 +94,11 @@ namespace LocalChachaAdminApi.Services
                     Price = product.Price
                 };
 
-                var productResponse = await GetHttpClientResponse<ProductResponseModel>("api/products/createProduct", productRequestModel, HttpMethod.Post, true, token);
+                var productResponse = await httpService.GetHttpClientResponse<ProductResponseModel>("api/products/createProduct", productRequestModel, HttpMethod.Post, true, token);
 
                 if (productResponse.Status == 1)
                     productsResponse.Add(productResponse);
             }
-        }
-
-        private async Task<T> GetHttpClientResponse<T>(string path, object request, HttpMethod httpMethod, bool includeToken = false, string token = "")
-        {
-            var httpRequestMessage = new HttpRequestMessage(httpMethod, path)
-            {
-                Content = new StringContent(JsonConvert.SerializeObject(request),
-                                    Encoding.UTF8,
-                                    "application/json")
-            };
-
-            if (includeToken)
-            {
-                httpRequestMessage.Headers.Authorization =
-                      new AuthenticationHeaderValue("Bearer", token);
-            }
-
-            var response = await httpClient.SendAsync(httpRequestMessage);
-
-            response.EnsureSuccessStatusCode();
-
-            string content = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(content);
         }
     }
 }

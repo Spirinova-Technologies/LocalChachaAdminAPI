@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace LocalChachaAdminApi.Models
+namespace LocalChachaAdminApi.Core.Models
 {
     public class CategoryResponseModel
     {

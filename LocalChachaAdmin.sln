@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocalChachaAdminApi", "LocalChachaAdminApi\LocalChachaAdminApi.csproj", "{5D5B0FB9-7F85-4868-A3E6-BA1BBC52BD1D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalChachaAdminApi.Core", "LocalChachaAdminApi.Core\LocalChachaAdminApi.Core.csproj", "{AA91EC5A-5ACD-4AC9-9CFD-366A3F144BA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocalChachaAdminApi.Infrastructure", "LocalChachaAdminApi.Infrastructure\LocalChachaAdminApi.Infrastructure.csproj", "{E20BB1B9-F451-4CDA-8EB1-74ACE3DB0C91}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{5D5B0FB9-7F85-4868-A3E6-BA1BBC52BD1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D5B0FB9-7F85-4868-A3E6-BA1BBC52BD1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D5B0FB9-7F85-4868-A3E6-BA1BBC52BD1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA91EC5A-5ACD-4AC9-9CFD-366A3F144BA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA91EC5A-5ACD-4AC9-9CFD-366A3F144BA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA91EC5A-5ACD-4AC9-9CFD-366A3F144BA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA91EC5A-5ACD-4AC9-9CFD-366A3F144BA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E20BB1B9-F451-4CDA-8EB1-74ACE3DB0C91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E20BB1B9-F451-4CDA-8EB1-74ACE3DB0C91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E20BB1B9-F451-4CDA-8EB1-74ACE3DB0C91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E20BB1B9-F451-4CDA-8EB1-74ACE3DB0C91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
