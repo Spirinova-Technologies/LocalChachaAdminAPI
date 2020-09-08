@@ -61,8 +61,8 @@ namespace LocalChachaAdminApi.Controllers
             try
             {
                 var merchants = mapper.Map<List<MerchantViewModel>, List<MerchantRequestModel>>(merchantViewModels);
-                 //var merchants = await merchantService.save();
-                return Ok();
+                var response = await merchantService.SaveMerchants(merchants);
+                return Ok(response);
             }
             catch (Exception ex)
             {

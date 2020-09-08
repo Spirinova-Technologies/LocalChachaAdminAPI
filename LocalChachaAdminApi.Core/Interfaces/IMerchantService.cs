@@ -7,5 +7,6 @@ namespace LocalChachaAdminApi.Core.Interfaces
     public interface IMerchantService
     {
         Task<List<MerchantRequestModel>> GetMerchants();
+        Task<CommonResponseModel> SaveMerchants(List<MerchantRequestModel> merchants);
     }
 }

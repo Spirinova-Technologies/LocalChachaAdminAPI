@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using System;
 using AutoMapper;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace LocalChachaAdminApi
 {
@@ -26,6 +27,9 @@ namespace LocalChachaAdminApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+
+            services.Configure<KestrelServerOptions>(
+            Configuration.GetSection("Kestrel"));
 
             //services
             services.AddTransient<IBulkInsertService, BulkInsertService>();
@@ -72,8 +76,10 @@ namespace LocalChachaAdminApi
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseCors(builder => builder.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+
             }
+
+            app.UseCors(builder => builder.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>

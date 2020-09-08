@@ -48,6 +48,13 @@ namespace LocalChachaAdminApi.Core.Models
 
         [JsonProperty("productFileName")]
         public string ProductFileName { get; set; }
+     
+        [JsonProperty("merchantSettingsFileName")]
+        public string MerchantSettingsFileName { get; set; }
+
+        public string Categories { get; set; }
+        public string Products { get; set; }
+        public string Settings { get; set; }
     }
     
 }

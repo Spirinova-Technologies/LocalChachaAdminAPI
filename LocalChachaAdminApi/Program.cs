@@ -10,11 +10,26 @@ namespace LocalChachaAdminApi
             CreateHostBuilder(args).Build().Run();
         }
 
+        //public static IHostBuilder CreateHostBuilder(string[] args) =>
+        //    Host.CreateDefaultBuilder(args)
+        //        .ConfigureWebHostDefaults(webBuilder =>
+        //        {
+        //            webBuilder.UseStartup<Startup>();
+        //            webBuilder.UseUrls("http://*:5000");
+        //        });
+
         public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+                 Host.CreateDefaultBuilder(args)
+                  .ConfigureWebHostDefaults(webBuilder =>
+                  {
+                      webBuilder.ConfigureKestrel(serverOptions =>
+                      {
+                          // Set properties and call methods on options
+                      })
+                      .UseKestrel()
+                      .UseUrls("http://*:5001")
+                      .UseStartup<Startup>();
+
+                  });
     }
 }
