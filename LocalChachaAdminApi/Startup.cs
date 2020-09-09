@@ -11,6 +11,7 @@ using Microsoft.OpenApi.Models;
 using System;
 using AutoMapper;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using LocalChachaAdminApi.Core.Repositories;
 
 namespace LocalChachaAdminApi
 {
@@ -38,6 +39,7 @@ namespace LocalChachaAdminApi
             services.AddTransient<ITokenService, TokenService>();
             services.AddTransient<IHttpService, HttpService>();
             services.AddTransient<IMerchantService, MerchantService>();
+            services.AddTransient<IMerchantRepository, MerchantRepository>();
 
             services.AddHttpClient("localChacha", c =>
             {

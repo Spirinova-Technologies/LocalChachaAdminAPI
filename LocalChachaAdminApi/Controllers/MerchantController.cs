@@ -69,5 +69,19 @@ namespace LocalChachaAdminApi.Controllers
                 return BadRequest(ex);
             }
         }
+
+        [HttpGet("deletemerchants")]
+        public async Task<ActionResult> DeleteMerchants()
+        {
+            try
+            {
+                await merchantService.DeleteMerchants();
+                return Ok(new CommonResponseModel { Message = "Merchants deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+        }
     }
 }

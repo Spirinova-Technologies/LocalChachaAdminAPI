@@ -8,5 +8,6 @@ namespace LocalChachaAdminApi.Core.Interfaces
     {
         Task<List<MerchantRequestModel>> GetMerchants();
         Task<CommonResponseModel> SaveMerchants(List<MerchantRequestModel> merchants);
+        Task DeleteMerchants();
     }
 }

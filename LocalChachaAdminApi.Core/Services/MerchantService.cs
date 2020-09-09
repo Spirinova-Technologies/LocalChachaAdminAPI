@@ -14,13 +14,15 @@ namespace LocalChachaAdminApi.Core.Services
     {
         private readonly IHttpService httpService;
         private readonly IS3BucketService s3BucketService;
+        private readonly IMerchantRepository merchantRepository;
 
         private static string Prefix = "merchants";
 
-        public MerchantService(IS3BucketService s3BucketService, IHttpService httpService)
+        public MerchantService(IS3BucketService s3BucketService, IHttpService httpService, IMerchantRepository merchantRepository)
         {
             this.httpService = httpService;
             this.s3BucketService = s3BucketService;
+            this.merchantRepository = merchantRepository;
         }
 
         public async Task<List<MerchantRequestModel>> GetMerchants()
@@ -29,12 +31,12 @@ namespace LocalChachaAdminApi.Core.Services
             var merchants = JsonConvert.DeserializeObject<List<MerchantRequestModel>>(merchantContent);
 
             //now get all the categoris data as well;
-            foreach (var merchant in merchants)
-            {
-                merchant.Categories = await s3BucketService.GetS3Object($"{Prefix}/{merchant.CategoryFileName}");
-                merchant.Products = await s3BucketService.GetS3Object($"{Prefix}/{merchant.ProductFileName}");
-                merchant.Settings = await s3BucketService.GetS3Object($"{Prefix}/{merchant.MerchantSettingsFileName}");
-            }
+            //foreach (var merchant in merchants)
+            //{
+            //    merchant.Categories = await s3BucketService.GetS3Object($"{Prefix}/{merchant.CategoryFileName}");
+            //    merchant.Products = await s3BucketService.GetS3Object($"{Prefix}/{merchant.ProductFileName}");
+            //    merchant.Settings = await s3BucketService.GetS3Object($"{Prefix}/{merchant.MerchantSettingsFileName}");
+            //}
 
             return merchants;
         }
@@ -63,6 +65,13 @@ namespace LocalChachaAdminApi.Core.Services
 
             return responseModel;
         }
+
+        public async Task DeleteMerchants()
+        {
+           await merchantRepository.DeleteMerchants();
+        }
+
+        #region private methods
 
         private async Task<MerchantResponseModel> InsertMerchants(MerchantRequestModel merchantRequest)
         {
@@ -136,6 +145,7 @@ namespace LocalChachaAdminApi.Core.Services
             }
         }
 
+        #endregion
 
     }
 }
