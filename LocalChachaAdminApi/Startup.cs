@@ -12,6 +12,7 @@ using System;
 using AutoMapper;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using LocalChachaAdminApi.Core.Repositories;
+using RestSharp;
 
 namespace LocalChachaAdminApi
 {
@@ -40,6 +41,8 @@ namespace LocalChachaAdminApi
             services.AddTransient<IHttpService, HttpService>();
             services.AddTransient<IMerchantService, MerchantService>();
             services.AddTransient<IMerchantRepository, MerchantRepository>();
+            services.AddTransient<IQuickBloxService, QuickBloxService>();
+            services.AddTransient<IRestClient, RestClient>();
 
             services.AddHttpClient("localChacha", c =>
             {

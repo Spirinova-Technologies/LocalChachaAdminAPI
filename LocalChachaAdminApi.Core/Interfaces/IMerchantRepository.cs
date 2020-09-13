@@ -1,12 +1,13 @@
-﻿using System;
+﻿using LocalChachaAdminApi.Core.Models;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LocalChachaAdminApi.Core.Interfaces
 {
-   public interface IMerchantRepository
+    public interface IMerchantRepository
     {
         Task DeleteMerchants();
+
+        Task<List<Merchant>> GetMerchants();
     }
 }

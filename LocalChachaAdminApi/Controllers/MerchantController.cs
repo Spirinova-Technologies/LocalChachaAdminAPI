@@ -15,13 +15,16 @@ namespace LocalChachaAdminApi.Controllers
     {
         private readonly IBulkInsertService bulkInsertService;
         private readonly IMerchantService merchantService;
+        private readonly IQuickBloxService quickBloxService;
         private readonly IMapper mapper;
 
-        public MerchantController(IBulkInsertService bulkInsertService, IMerchantService merchantService, IMapper mapper)
+        public MerchantController(IBulkInsertService bulkInsertService, IMerchantService merchantService,
+            IMapper mapper, IQuickBloxService quickBloxService)
         {
             this.bulkInsertService = bulkInsertService;
             this.merchantService = merchantService;
             this.mapper = mapper;
+            this.quickBloxService = quickBloxService;
         }
 
         [HttpGet("builkinsert")]
