@@ -5,7 +5,6 @@ using LocalChachaAdminApi.Infrastructure.Extensions;
 using LocalChachaAdminApi.Infrastructure.Helpers;
 using Microsoft.Extensions.Configuration;
 using RestSharp;
-using System;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,9 +17,14 @@ namespace LocalChachaAdminApi.Core.Services
 
         //private variables
         private readonly string _authKey;
+
         private readonly string _authSecret;
         private readonly string _appId;
         private readonly string _accountKey;
+
+        private const string MerchantUsername = "localchacha-merchant-";
+        private const string Password = "localchacha";
+
         public QuickBloxService(IConfiguration configuration)
         {
             client = new RestClient(configuration["QuickBlox:BaseUrl"]); ;
@@ -31,7 +35,7 @@ namespace LocalChachaAdminApi.Core.Services
             _accountKey = configuration["QuickBlox:AccountKey"];
         }
 
-        public async Task<string> GetQuickBloxToken(string username ="", string passowrd = "")
+        public async Task<string> GetQuickBloxToken(string username = "", string passowrd = "")
         {
             var nonce = GlobalHelper.getNonce();
             var timeStamp = GlobalHelper.getTimestamp();
@@ -51,7 +55,7 @@ namespace LocalChachaAdminApi.Core.Services
             postData.AppendFormat("&nonce={0}", nonce);
             postData.AppendFormat("&timestamp={0}", timeStamp);
 
-            if(!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(passowrd))
+            if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(passowrd))
             {
                 postData.AppendFormat("&user[login]={0}", username);
                 postData.AppendFormat("&user[password]={0}", passowrd);
@@ -62,23 +66,21 @@ namespace LocalChachaAdminApi.Core.Services
 
             var signature = GlobalHelper.getHash(postData.ToString(), _authSecret).ByteToString();
 
-
             request.AddParameter("signature", signature);
-           
+
             request.AddHeader("QuickBlox-REST-API-Version", "0.1.0");
             request.RequestFormat = DataFormat.Json;
 
             var response = await client.ExecuteAsync<Token>(request);
 
-            if (response.ResponseStatus == ResponseStatus.Completed && response.ErrorMessage == null)
+            if (response.ResponseStatus == ResponseStatus.Completed && response.ErrorMessage == null && response.StatusCode != HttpStatusCode.Unauthorized)
             {
                 return response.Data.Session.Token;
             }
             else
             {
-                throw response.ErrorException;
+                return string.Empty;
             }
-
         }
 
         public async Task<QuickbloxUser> CreateUser(QuickBloxUserRequest userRequest)
@@ -90,7 +92,9 @@ namespace LocalChachaAdminApi.Core.Services
             };
             request.AddJsonBody(new { user = userRequest });
 
-            await AddHeaders(request);
+            var token = await GetQuickBloxToken();
+
+            AddHeaders(request, token);
 
             var result = await client.ExecutePostAsync<QuickBloxUserResponse>(request);
 
@@ -112,29 +116,54 @@ namespace LocalChachaAdminApi.Core.Services
                 JsonSerializer = new NewtonsoftSerializer()
             };
 
-            await AddHeaders(request, merchant);
+            var token = await GetQuickBloxToken($"{MerchantUsername}{merchant.Mobile}", Password);
 
-            try
-            {
-                var result = await client.ExecuteAsync(request);
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            AddHeaders(request, token);
+
+            var result = await client.ExecuteAsync(request);
         }
 
+        public async Task<QuickBloxDialogueResponse> GetDialogues(string token)
+        {
+            var request = new RestRequest($"chat/Dialog.json", Method.GET)
+            {
+                RequestFormat = DataFormat.Json,
+                JsonSerializer = new NewtonsoftSerializer()
+            };
 
-        private async Task AddHeaders(RestRequest request, Merchant merchant = null)
+            AddHeaders(request, token);
+
+            var result = await client.ExecuteGetAsync<QuickBloxDialogueResponse>(request);
+
+            if (result.ResponseStatus != ResponseStatus.Completed)
+            {
+                return null;
+            }
+            if (result.StatusCode == HttpStatusCode.OK)
+                return result.Data;
+
+            return null;
+        }
+
+        public async Task DeleteDialogue(string dialogueId, string token)
+        {
+            var request = new RestRequest($"chat/Dialog/{dialogueId}.json", Method.DELETE)
+            {
+                RequestFormat = DataFormat.Json,
+                JsonSerializer = new NewtonsoftSerializer(),
+                Body = new RequestBody(DataFormat.Json.ToString(), "force", 1)
+            };
+
+            AddHeaders(request, token);
+
+            var result = await client.ExecuteAsync(request);
+        }
+
+        private void AddHeaders(RestRequest request, string token)
         {
             request.RequestFormat = DataFormat.Json;
             request.JsonSerializer = new NewtonsoftSerializer();
             request.AddHeader("QuickBlox-REST-API-Version", "0.1.0");
-
-            var username = merchant != null ? $"localchacha-merchant-{merchant.Mobile}": string.Empty;
-            var password = merchant != null ? "localchacha" : string.Empty;
-
-            string token = await GetQuickBloxToken(username, password);
 
             request.AddHeader("QB-Token", token);
         }

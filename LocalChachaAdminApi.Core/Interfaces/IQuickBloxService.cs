@@ -10,5 +10,9 @@ namespace LocalChachaAdminApi.Core.Interfaces
         Task<QuickbloxUser> CreateUser(QuickBloxUserRequest userRequest);
 
         Task DeleteUser(Merchant merchant);
+
+        Task<QuickBloxDialogueResponse> GetDialogues(string token);
+
+        Task DeleteDialogue(string dialogueId, string token);
     }
 }

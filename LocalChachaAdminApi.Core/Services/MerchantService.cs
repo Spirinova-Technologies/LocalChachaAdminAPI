@@ -17,6 +17,9 @@ namespace LocalChachaAdminApi.Core.Services
         private readonly IQuickBloxService quickBloxService;
 
         private static string Prefix = "merchants";
+        private const string Username = "localchacha-user-";
+        private const string Password = "localchacha";
+        private const string MerchantLogin = "localchacha-merchant-";
 
         public MerchantService(IS3BucketService s3BucketService, IHttpService httpService, IMerchantRepository merchantRepository,
             IQuickBloxService quickBloxService)
@@ -50,14 +53,39 @@ namespace LocalChachaAdminApi.Core.Services
         {
             var merchants = await merchantRepository.GetMerchants();
 
-            foreach(var merchant in merchants)
+            foreach (var merchant in merchants)
             {
-               await quickBloxService.DeleteUser(merchant);
+                await quickBloxService.DeleteUser(merchant);
+            }
+
+            //need to fetch data from somewhere else
+            var mobileNumbers = new List<string>
+            {
+                "9175429576",
+                "8605633693",
+                "9130740630",
+                "9175429577"
+            };
+
+            foreach (var mobileNumber in mobileNumbers)
+            {
+                var username = $"{Username}{mobileNumber}";
+                var token = await quickBloxService.GetQuickBloxToken(username, Password);
+
+                var quickBloxDialogueResponse = await quickBloxService.GetDialogues(token);
+
+                //delete dialogues of the quickblox merchants
+                if (quickBloxDialogueResponse != null)
+                {
+                    foreach (var dialogue in quickBloxDialogueResponse.Items)
+                    {
+                        await quickBloxService.DeleteDialogue(dialogue.Id, token);
+                    }
+                }
             }
 
             await merchantRepository.DeleteMerchants();
         }
-
 
         #region private methods
 
@@ -126,8 +154,8 @@ namespace LocalChachaAdminApi.Core.Services
                 Email = email,
                 Phone = mobileNumber,
                 Password = "localchacha",
-                Login = $"localchacha-merchant-{mobileNumber}",
-                FullName =fullName
+                Login = $"{MerchantLogin}{mobileNumber}",
+                FullName = fullName
             };
 
             var quickBloxUser = await quickBloxService.CreateUser(quickBloxUserRequest);
@@ -137,7 +165,6 @@ namespace LocalChachaAdminApi.Core.Services
         private async Task InsertMerchant(object merchant, MerchantRequestModel merchantRequest, CommonResponseModel responseModel)
         {
             var merchantResponse = await httpService.GetHttpClientResponse<MerchantResponseModel>("api/merchants/create", merchant, HttpMethod.Post);
-
 
             if (merchantResponse.Status == 1)
             {
@@ -213,7 +240,6 @@ namespace LocalChachaAdminApi.Core.Services
             var array = email.Split('@');
             return string.Join($"{number}@", array);
         }
-
 
         #endregion private methods
     }
