@@ -31,9 +31,6 @@ namespace LocalChachaAdminApi.Core.Models
         [JsonProperty(PropertyName = "twitter_id")]
         public string TwitterId { get; set; }
 
-        //[JsonProperty(PropertyName = "blob_id")]
-        //public long BlobId { get; set; }
-
         [JsonProperty(PropertyName = "external_id")]
         public long ExternalId { get; set; }
 
@@ -45,31 +42,5 @@ namespace LocalChachaAdminApi.Core.Models
 
         [JsonProperty(PropertyName = "tag_list")]
         public string TagList { get; set; }
-
-        [JsonProperty(PropertyName = "custom_data")]
-        public IDictionary<string, object> CustomData { get; set; }
-
-        public List<string> Tags
-        {
-            get
-            {
-                if (TagList != null)
-                {
-                    return TagList.Split(',').ToList();
-                }
-                return new List<string>();
-            }
-            set
-            {
-                if (value == null || value.Count() == 0)
-                {
-                    TagList = string.Join(",", value.ToArray());
-                }
-                else
-                {
-                    TagList = null;
-                }
-            }
-        }
     }
 }

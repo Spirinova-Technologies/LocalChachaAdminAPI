@@ -56,6 +56,13 @@ namespace LocalChachaAdminApi
 
             services.AddAutoMapper(typeof(AutoMapperConfig).Assembly);
 
+            //logging
+            services.AddLogging();
+
+            //for removing error possible object cycle was detected which is not supported
+            services.AddControllers().AddNewtonsoftJson(options =>
+                     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
             services.AddSwaggerGen();
             services.AddSwaggerGen(c =>
             {

@@ -19,6 +19,7 @@
         public string ProductFileName { get; set; }
         public string MerchantSettingsFileName { get; set; }
         public int TotalRecords { get; set; }
+        public int TotalMessages { get; set; }
         public string Categories { get; set; }
         public string Products { get; set; }
         public string Settings { get; set; }

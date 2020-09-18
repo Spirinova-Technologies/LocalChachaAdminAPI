@@ -1,6 +1,8 @@
 ﻿using LocalChachaAdminApi.Core.Interfaces;
 using LocalChachaAdminApi.Core.Models;
 using LocalChachaAdminApi.Infrastructure;
+using LocalChachaAdminApi.Infrastructure.Extensions;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +17,7 @@ namespace LocalChachaAdminApi.Core.Services
         private readonly IS3BucketService s3BucketService;
         private readonly IMerchantRepository merchantRepository;
         private readonly IQuickBloxService quickBloxService;
+        private readonly ILogger<MerchantService> logger;
 
         private static string Prefix = "merchants";
         private const string Username = "localchacha-user-";
@@ -22,18 +25,22 @@ namespace LocalChachaAdminApi.Core.Services
         private const string MerchantLogin = "localchacha-merchant-";
 
         public MerchantService(IS3BucketService s3BucketService, IHttpService httpService, IMerchantRepository merchantRepository,
-            IQuickBloxService quickBloxService)
+            IQuickBloxService quickBloxService, ILogger<MerchantService> logger)
         {
             this.httpService = httpService;
             this.s3BucketService = s3BucketService;
             this.merchantRepository = merchantRepository;
             this.quickBloxService = quickBloxService;
+            this.logger = logger;
         }
 
         public async Task<List<MerchantRequestModel>> GetMerchants()
         {
+            logger.LogInformation("Merchant Service. Getting all merchants");
             var merchantContent = await s3BucketService.GetS3Object(Constants.MerchantsS3Path);
             var merchants = JsonConvert.DeserializeObject<List<MerchantRequestModel>>(merchantContent);
+
+            logger.LogInformation("Merchant Service. Retrived mechants successful");
 
             return merchants;
         }
@@ -55,31 +62,26 @@ namespace LocalChachaAdminApi.Core.Services
 
             foreach (var merchant in merchants)
             {
-                await quickBloxService.DeleteUser(merchant);
+                quickBloxService.DeleteUser(merchant);
             }
 
             //need to fetch data from somewhere else
-            var mobileNumbers = new List<string>
-            {
-                "9175429576",
-                "8605633693",
-                "9130740630",
-                "9175429577"
-            };
-
-            foreach (var mobileNumber in mobileNumbers)
+            foreach (var mobileNumber in Constants.UserMobileNumbers)
             {
                 var username = $"{Username}{mobileNumber}";
-                var token = await quickBloxService.GetQuickBloxToken(username, Password);
+                var session = await quickBloxService.GetQuickBloxSession(username, Password);
 
-                var quickBloxDialogueResponse = await quickBloxService.GetDialogues(token);
-
-                //delete dialogues of the quickblox merchants
-                if (quickBloxDialogueResponse != null)
+                if (session != null)
                 {
-                    foreach (var dialogue in quickBloxDialogueResponse.Items)
+                    var quickBloxDialogueResponse = await quickBloxService.GetDialogues(session.Token);
+
+                    //delete dialogues of the quickblox merchants
+                    if (quickBloxDialogueResponse != null)
                     {
-                        await quickBloxService.DeleteDialogue(dialogue.Id, token);
+                        foreach (var dialogue in quickBloxDialogueResponse.Items)
+                        {
+                            quickBloxService.DeleteDialogue(dialogue.Id, session.Token);
+                        }
                     }
                 }
             }
@@ -116,15 +118,19 @@ namespace LocalChachaAdminApi.Core.Services
                         loginType = merchantRequest.LoginType,
                         description = merchantRequest.Description,
                         inviteCode = merchantRequest.InviteCode,
-                        quickbloxId = quickBloxUser?.Id
+                        quickbloxId = quickBloxUser?.Id ?? 0
                     };
 
                     await InsertMerchant(merchant, merchantRequest, responseModel);
+
+                    CreateQuickBloxDialogue(quickBloxUser, merchantRequest);
                 }
             }
             else
             {
                 var quickBloxUser = await CreateQuickBloxUser(merchantRequest.Mobile, merchantRequest.Email, merchantRequest.FullName);
+
+                CreateQuickBloxDialogue(quickBloxUser, merchantRequest);
 
                 var merchant = new
                 {
@@ -140,10 +146,45 @@ namespace LocalChachaAdminApi.Core.Services
                     loginType = merchantRequest.LoginType,
                     description = merchantRequest.Description,
                     inviteCode = merchantRequest.InviteCode,
-                    quickbloxId = quickBloxUser?.Id
+                    quickbloxId = quickBloxUser?.Id ?? 0
                 };
 
                 await InsertMerchant(merchant, merchantRequest, responseModel);
+            }
+        }
+
+        private async Task CreateQuickBloxDialogue(QuickbloxUser quickBloxUser, MerchantRequestModel merchantRequest)
+        {
+            if (quickBloxUser != null)
+            {
+                //for every user and merchant create default chats
+                foreach (var userMobileNumber in Constants.UserMobileNumbers)
+                {
+                    var username = $"{Username}{userMobileNumber}";
+                    var session = await quickBloxService.GetQuickBloxSession(username, Password);
+
+                    if (session != null)
+                    {
+                        var dialogue = await quickBloxService.CreateDialogue(session.UserId, quickBloxUser.Id, session.Token);
+
+                        if (dialogue != null)
+                        {
+                            logger.LogInformation($"Dialoue {dialogue.Id} created successfully for user {username} and merchant {quickBloxUser.Login}");
+                            logger.LogInformation($"Inserting total {merchantRequest.TotalMessages} for user {username} and merchant {quickBloxUser.Login}");
+                            //add chat for the dialogue. take a chat count as input
+                            for (var i = 1; i <= merchantRequest.TotalMessages; i++)
+                            {
+                                var messageRequest = new CreateMessageRequest
+                                {
+                                    ChatDialogId = dialogue.Id,
+                                    Message = $"Test Message {i}"
+                                };
+
+                                quickBloxService.CreateMessage(messageRequest, session.Token);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -165,14 +206,16 @@ namespace LocalChachaAdminApi.Core.Services
         private async Task InsertMerchant(object merchant, MerchantRequestModel merchantRequest, CommonResponseModel responseModel)
         {
             var merchantResponse = await httpService.GetHttpClientResponse<MerchantResponseModel>("api/merchants/create", merchant, HttpMethod.Post);
-
+            var merchantName = ObjectExtension.GetPropertyValue<string>(merchant, "full_name");
             if (merchantResponse.Status == 1)
             {
+                logger.LogInformation($"Created merchant {merchantName} successfully.");
                 await InsertCategories(merchantRequest, merchantResponse.Merchant.Id, merchantResponse.Merchant.Token);
             }
             else
             {
-                responseModel.Errors.Add(merchantRequest.FullName);
+                logger.LogInformation($"Failed to insert merchant {merchantName}.");
+                responseModel.Errors.Add(merchantName);
             }
         }
 
@@ -191,7 +234,14 @@ namespace LocalChachaAdminApi.Core.Services
                 var categoriesResponse = await httpService.GetHttpClientResponse<CategoryResponseModel>("api/categories/create", categoryRequest, HttpMethod.Post, true, token);
 
                 if (categoriesResponse.Status == 1)
+                {
+                    logger.LogInformation($"Created category  {categoryRequest.Name} successfully.");
                     categoriesResponses.Add(categoriesResponse);
+                }
+                else
+                {
+                    logger.LogInformation($"Failed to insert category {categoryRequest.Name}.");
+                }
             }
 
             foreach (var categoryResponse in categoriesResponses)
@@ -208,7 +258,6 @@ namespace LocalChachaAdminApi.Core.Services
             var productsRequest = !string.IsNullOrEmpty(productContents) ? JsonConvert.DeserializeObject<List<Product>>(productContents)
                 : new List<Product>();
 
-            var productsResponse = new List<ProductResponseModel>();
             foreach (var product in productsRequest.Where(x => x.CategoryName.Trim() == categoryName.Trim()).ToList())
             {
                 var productRequestModel = new ProductRequestModel
@@ -223,10 +272,7 @@ namespace LocalChachaAdminApi.Core.Services
                     Price = product.Price
                 };
 
-                var productResponse = await httpService.GetHttpClientResponse<ProductResponseModel>("api/products/createProduct", productRequestModel, HttpMethod.Post, true, token);
-
-                if (productResponse.Status == 1)
-                    productsResponse.Add(productResponse);
+                await httpService.GetHttpClientResponse<ProductResponseModel>("api/products/createProduct", productRequestModel, HttpMethod.Post, true, token);
             }
         }
 

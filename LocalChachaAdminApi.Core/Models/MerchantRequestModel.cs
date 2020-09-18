@@ -55,6 +55,10 @@ namespace LocalChachaAdminApi.Core.Models
         [JsonProperty("totalRecords")]
         public int TotalRecords { get; set; }
 
+        [JsonProperty("totalMessages")]
+        public int TotalMessages { get; set; }
+        
+
         public string Categories { get; set; }
         public string Products { get; set; }
         public string Settings { get; set; }

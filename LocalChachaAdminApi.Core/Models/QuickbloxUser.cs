@@ -48,12 +48,5 @@ namespace LocalChachaAdminApi.Core.Models
 
         [JsonProperty("custom_data")]
         public string CustomData { get; set; }
-
-        [JsonProperty("user_tags")]
-        public string UserTags { get; set; }
-
-        public List<string> Tags { get { if (UserTags != null) { return UserTags.Split(',').ToList(); } else { return new List<string>(); } } }
-
-        public Dictionary<string, object> Custom { get { return Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(CustomData); } }
     }
 }
