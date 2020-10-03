@@ -29,14 +29,14 @@ namespace LocalChachaAdminApi.Controllers
             this.logger = logger;
         }
 
-        [HttpGet("getmerchants")]
-        public async Task<ActionResult> GetMerchants()
+        [HttpGet("getsuggestedmerchants")]
+        public async Task<ActionResult> GetSuggestedMerchants()
         {
             try
             {
                 logger.LogInformation("Getting merchants.");
 
-                var merchants = await merchantService.GetMerchants();
+                var merchants = await merchantService.GetSuggestedMerchants();
                 var mappersViewModel = mapper.Map<List<MerchantRequestModel>, List<MerchantViewModel>>(merchants);
                 return Ok(mappersViewModel);
             }
@@ -52,7 +52,7 @@ namespace LocalChachaAdminApi.Controllers
             try
             {
                 var merchants = mapper.Map<List<MerchantViewModel>, List<MerchantRequestModel>>(merchantViewModels);
-                var response = await merchantService.SaveMerchants(merchants);
+                var response = await merchantService.SaveSuggestedMerchants(merchants);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -68,6 +68,23 @@ namespace LocalChachaAdminApi.Controllers
             {
                 await merchantService.DeleteMerchants();
                 return Ok(new CommonResponseModel { Message = "Merchants deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+        }
+
+        [HttpGet("getmerchants")]
+        public async Task<ActionResult> GetSuggestedMerchants(SearchFilterModel searchFilterModel)
+        {
+            try
+            {
+                logger.LogInformation("Getting merchants.");
+                var searchFilter = mapper.Map<SearchFilterModel, SearchFilter>(searchFilterModel);
+                var merchants = await merchantService.GetMerchants(searchFilter);
+                var mappersViewModel = mapper.Map<List<Merchant>, List<MerchantViewModel>>(merchants);
+                return Ok(mappersViewModel);
             }
             catch (Exception ex)
             {

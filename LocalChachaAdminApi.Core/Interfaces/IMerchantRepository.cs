@@ -8,6 +8,9 @@ namespace LocalChachaAdminApi.Core.Interfaces
     {
         Task DeleteMerchants();
 
-        Task<List<Merchant>> GetMerchants();
+        Task<List<Merchant>> GetMerchants(SearchFilter filter);
+
+        Task<List<Merchant>> GetAllMerchants();
+        
     }
 }

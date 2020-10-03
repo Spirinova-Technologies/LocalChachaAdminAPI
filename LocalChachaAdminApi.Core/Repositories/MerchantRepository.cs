@@ -32,9 +32,22 @@ namespace LocalChachaAdminApi.Core.Repositories
             }
         }
 
-        public async Task<List<Merchant>> GetMerchants()
+        public async Task<List<Merchant>> GetAllMerchants()
         {
-            var sqlQuery = @"select * from merchants";
+            var sqlQuery = $@"select * from merchants";
+
+            using (IDbConnection connection = await OpenConnectionAsync())
+            {
+                var result = await connection.QueryAsync<Merchant>(sqlQuery);
+
+                return result.ToList();
+            }
+        }
+
+        public async Task<List<Merchant>> GetMerchants(SearchFilter filter)
+        {
+            var sqlQuery = $@"select count(id) from merchants;
+                             select * from merchants order by {filter.OrderBy ?? "id"} LIMIT {filter.PageSize * (filter.PageIndex - 1)}, {filter.PageSize}";
 
             using (IDbConnection connection = await OpenConnectionAsync())
             {

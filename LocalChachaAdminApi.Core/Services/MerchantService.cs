@@ -34,7 +34,7 @@ namespace LocalChachaAdminApi.Core.Services
             this.logger = logger;
         }
 
-        public async Task<List<MerchantRequestModel>> GetMerchants()
+        public async Task<List<MerchantRequestModel>> GetSuggestedMerchants()
         {
             logger.LogInformation("Merchant Service. Getting all merchants");
             var merchantContent = await s3BucketService.GetS3Object(Constants.MerchantsS3Path);
@@ -45,7 +45,7 @@ namespace LocalChachaAdminApi.Core.Services
             return merchants;
         }
 
-        public async Task<CommonResponseModel> SaveMerchants(List<MerchantRequestModel> merchants)
+        public async Task<CommonResponseModel> SaveSuggestedMerchants(List<MerchantRequestModel> merchants)
         {
             var responseModel = new CommonResponseModel();
             foreach (var merchant in merchants)
@@ -58,7 +58,7 @@ namespace LocalChachaAdminApi.Core.Services
 
         public async Task DeleteMerchants()
         {
-            var merchants = await merchantRepository.GetMerchants();
+            var merchants = await merchantRepository.GetAllMerchants();
 
             foreach (var merchant in merchants)
             {
@@ -97,12 +97,9 @@ namespace LocalChachaAdminApi.Core.Services
             {
                 for (int i = 1; i <= merchantRequest.TotalRecords; i++)
                 {
-                    //before inserting into the database we have to create quickblox user
                     var mobileNumber = i == 1 ? merchantRequest.Mobile : GetNextNumber(merchantRequest.Mobile, i);
                     var email = i == 1 ? merchantRequest.Email : GetNewEmailId(merchantRequest.Email, i);
                     var fullName = i == 1 ? merchantRequest.FullName : $"{merchantRequest.FullName} {i}";
-
-                    var quickBloxUser = await CreateQuickBloxUser(mobileNumber, email, fullName);
 
                     var merchant = new
                     {
@@ -118,20 +115,15 @@ namespace LocalChachaAdminApi.Core.Services
                         loginType = merchantRequest.LoginType,
                         description = merchantRequest.Description,
                         inviteCode = merchantRequest.InviteCode,
-                        quickbloxId = quickBloxUser?.Id ?? 0
                     };
 
-                    await InsertMerchant(merchant, merchantRequest, responseModel);
+                 var merchantResponse =   await InsertMerchant(merchant, merchantRequest, responseModel);
 
-                    CreateQuickBloxDialogue(quickBloxUser, merchantRequest);
+                 CreateQuickBloxDialogue(merchantResponse, merchantRequest);
                 }
             }
             else
             {
-                var quickBloxUser = await CreateQuickBloxUser(merchantRequest.Mobile, merchantRequest.Email, merchantRequest.FullName);
-
-                CreateQuickBloxDialogue(quickBloxUser, merchantRequest);
-
                 var merchant = new
                 {
                     full_name = merchantRequest.FullName,
@@ -146,16 +138,17 @@ namespace LocalChachaAdminApi.Core.Services
                     loginType = merchantRequest.LoginType,
                     description = merchantRequest.Description,
                     inviteCode = merchantRequest.InviteCode,
-                    quickbloxId = quickBloxUser?.Id ?? 0
                 };
 
-                await InsertMerchant(merchant, merchantRequest, responseModel);
+                var merchantResponse = await InsertMerchant(merchant, merchantRequest, responseModel);
+
+                CreateQuickBloxDialogue(merchantResponse, merchantRequest);
             }
         }
 
-        private async Task CreateQuickBloxDialogue(QuickbloxUser quickBloxUser, MerchantRequestModel merchantRequest)
+        private async Task CreateQuickBloxDialogue(MerchantResponseModel merchantResponseModel, MerchantRequestModel merchantRequest)
         {
-            if (quickBloxUser != null)
+            if (merchantResponseModel.Merchant != null)
             {
                 //for every user and merchant create default chats
                 foreach (var userMobileNumber in Constants.UserMobileNumbers)
@@ -165,12 +158,12 @@ namespace LocalChachaAdminApi.Core.Services
 
                     if (session != null)
                     {
-                        var dialogue = await quickBloxService.CreateDialogue(session.UserId, quickBloxUser.Id, session.Token);
+                        var dialogue = await quickBloxService.CreateDialogue(session.UserId, merchantResponseModel.Merchant.QuickBloxId, session.Token);
 
                         if (dialogue != null)
                         {
-                            logger.LogInformation($"Dialoue {dialogue.Id} created successfully for user {username} and merchant {quickBloxUser.Login}");
-                            logger.LogInformation($"Inserting total {merchantRequest.TotalMessages} for user {username} and merchant {quickBloxUser.Login}");
+                            logger.LogInformation($"Dialoue {dialogue.Id} created successfully for user {username} and merchant {merchantResponseModel.Merchant.FullName}");
+                            logger.LogInformation($"Inserting total {merchantRequest.TotalMessages} for user {username} and merchant {merchantResponseModel.Merchant.FullName}");
                             //add chat for the dialogue. take a chat count as input
                             for (var i = 1; i <= merchantRequest.TotalMessages; i++)
                             {
@@ -203,7 +196,7 @@ namespace LocalChachaAdminApi.Core.Services
             return quickBloxUser;
         }
 
-        private async Task InsertMerchant(object merchant, MerchantRequestModel merchantRequest, CommonResponseModel responseModel)
+        private async Task<MerchantResponseModel> InsertMerchant(object merchant, MerchantRequestModel merchantRequest, CommonResponseModel responseModel)
         {
             var merchantResponse = await httpService.GetHttpClientResponse<MerchantResponseModel>("api/merchants/create", merchant, HttpMethod.Post);
             var merchantName = ObjectExtension.GetPropertyValue<string>(merchant, "full_name");
@@ -217,6 +210,8 @@ namespace LocalChachaAdminApi.Core.Services
                 logger.LogInformation($"Failed to insert merchant {merchantName}.");
                 responseModel.Errors.Add(merchantName);
             }
+
+            return merchantResponse;
         }
 
         private async Task InsertCategories(MerchantRequestModel merchantRequestModel, int merchantId, string token)
@@ -285,6 +280,11 @@ namespace LocalChachaAdminApi.Core.Services
         {
             var array = email.Split('@');
             return string.Join($"{number}@", array);
+        }
+
+        public Task<List<Merchant>> GetMerchants(SearchFilter filter)
+        {
+            return merchantRepository.GetMerchants(filter);
         }
 
         #endregion private methods

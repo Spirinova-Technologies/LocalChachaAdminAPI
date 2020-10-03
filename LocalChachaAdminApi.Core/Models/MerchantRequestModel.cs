@@ -24,7 +24,7 @@ namespace LocalChachaAdminApi.Core.Models
 
         [JsonProperty("loginType")]
         public string LoginType { get; set; }
-     
+
         [JsonProperty("address")]
         public string Address { get; set; }
 
@@ -48,7 +48,7 @@ namespace LocalChachaAdminApi.Core.Models
 
         [JsonProperty("productFileName")]
         public string ProductFileName { get; set; }
-     
+
         [JsonProperty("merchantSettingsFileName")]
         public string MerchantSettingsFileName { get; set; }
 
@@ -57,12 +57,5 @@ namespace LocalChachaAdminApi.Core.Models
 
         [JsonProperty("totalMessages")]
         public int TotalMessages { get; set; }
-        
-
-        public string Categories { get; set; }
-        public string Products { get; set; }
-        public string Settings { get; set; }
-
     }
-    
 }

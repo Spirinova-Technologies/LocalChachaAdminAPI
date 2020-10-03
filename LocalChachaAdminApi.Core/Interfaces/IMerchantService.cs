@@ -6,8 +6,9 @@ namespace LocalChachaAdminApi.Core.Interfaces
 {
     public interface IMerchantService
     {
-        Task<List<MerchantRequestModel>> GetMerchants();
-        Task<CommonResponseModel> SaveMerchants(List<MerchantRequestModel> merchants);
+        Task<List<MerchantRequestModel>> GetSuggestedMerchants();
+        Task<List<Merchant>> GetMerchants(SearchFilter filter);
+        Task<CommonResponseModel> SaveSuggestedMerchants(List<MerchantRequestModel> merchants);
         Task DeleteMerchants();
     }
 }
