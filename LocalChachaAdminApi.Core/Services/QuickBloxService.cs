@@ -134,7 +134,7 @@ namespace LocalChachaAdminApi.Core.Services
                 JsonSerializer = new NewtonsoftSerializer()
             };
 
-            var token = await GetQuickBloxToken($"{MerchantUsername}{merchant.Mobile}", Password);
+            var token = await GetQuickBloxToken($"{MerchantUsername}{merchant.Id}", Password);
 
             AddHeaders(request, token);
 

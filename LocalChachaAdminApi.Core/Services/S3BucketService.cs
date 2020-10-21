@@ -40,19 +40,27 @@ namespace LocalChachaAdminApi.Core.Services
             }
         }
 
-        //public async Task GetS3ListObjects(string prefix)
-        //{
-        //    ListObjectsRequest request = new ListObjectsRequest
-        //    {
-        //        BucketName = configuration["bucketName"],
-        //        Prefix = prefix
-        //    };
+        public async Task<StreamReader> GetS3StreamReader(string filePath)
+        {
+            try
+            {
+                string bucketName = configuration["bucketName"];
+                GetObjectRequest request = new GetObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = filePath
+                };
 
-        //    var client = GetAmazonS3Client();
-        //    ListObjectsResponse response = await client.ListObjectsAsync(request);
-           
-        //   // return reader.ReadToEnd();
-        //}
+                var client = GetAmazonS3Client();
+                GetObjectResponse response = await client.GetObjectAsync(request);
+                StreamReader reader = new StreamReader(response.ResponseStream);
+                return reader;
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
         private AmazonS3Client GetAmazonS3Client()
         {

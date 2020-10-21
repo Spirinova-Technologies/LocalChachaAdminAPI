@@ -48,6 +48,7 @@ namespace LocalChachaAdminApi
             services.AddTransient<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<IProductRepository, ProductRepository>();
             services.AddTransient<INotificationService, NotificationService>();
+            services.AddTransient<IUserRepository, UserRepository>();
 
             services.AddHttpClient("localChacha", c =>
             {

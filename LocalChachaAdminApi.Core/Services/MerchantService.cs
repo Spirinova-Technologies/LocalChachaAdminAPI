@@ -1,10 +1,13 @@
-﻿using LocalChachaAdminApi.Core.Interfaces;
+﻿using CsvHelper;
+using LocalChachaAdminApi.Core.Interfaces;
 using LocalChachaAdminApi.Core.Models;
 using LocalChachaAdminApi.Infrastructure;
 using LocalChachaAdminApi.Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -17,6 +20,7 @@ namespace LocalChachaAdminApi.Core.Services
         private readonly IS3BucketService s3BucketService;
         private readonly IMerchantRepository merchantRepository;
         private readonly IQuickBloxService quickBloxService;
+        private readonly IUserRepository userRepository;
         private readonly ILogger<MerchantService> logger;
 
         private static string Prefix = "merchants";
@@ -25,13 +29,14 @@ namespace LocalChachaAdminApi.Core.Services
         private const string MerchantLogin = "localchacha-merchant-";
 
         public MerchantService(IS3BucketService s3BucketService, IHttpService httpService, IMerchantRepository merchantRepository,
-            IQuickBloxService quickBloxService, ILogger<MerchantService> logger)
+            IQuickBloxService quickBloxService, ILogger<MerchantService> logger, IUserRepository userRepository)
         {
             this.httpService = httpService;
             this.s3BucketService = s3BucketService;
             this.merchantRepository = merchantRepository;
             this.quickBloxService = quickBloxService;
             this.logger = logger;
+            this.userRepository = userRepository;
         }
 
         public async Task<List<MerchantRequestModel>> GetSuggestedMerchants()
@@ -62,37 +67,71 @@ namespace LocalChachaAdminApi.Core.Services
 
             foreach (var merchant in merchants)
             {
-                quickBloxService.DeleteUser(merchant);
+               await quickBloxService.DeleteUser(merchant);
             }
 
+            var users = await userRepository.GetAllUsers();
             //need to fetch data from somewhere else
-            foreach (var mobileNumber in Constants.UserMobileNumbers)
+            foreach (var user in users)
             {
-                var username = $"{Username}{mobileNumber}";
-                var session = await quickBloxService.GetQuickBloxSession(username, Password);
-
-                if (session != null)
-                {
-                    var quickBloxDialogueResponse = await quickBloxService.GetDialogues(session.Token);
-
-                    //delete dialogues of the quickblox merchants
-                    if (quickBloxDialogueResponse != null)
-                    {
-                        foreach (var dialogue in quickBloxDialogueResponse.Items)
-                        {
-                            quickBloxService.DeleteDialogue(dialogue.Id, session.Token);
-                        }
-                    }
-                }
+                var username = $"{Username}{user.Id}";
+                await DeleteDialogues(username, Password);
             }
+
+            //delete all welcome message
+            await DeleteDialogues("LocalChacha", Password);
 
             await merchantRepository.DeleteMerchants();
         }
 
+        private async Task DeleteDialogues(string username, string password)
+        {
+            var session = await quickBloxService.GetQuickBloxSession(username, password);
+
+            if (session != null)
+            {
+                var quickBloxDialogueResponse = await quickBloxService.GetDialogues(session.Token);
+
+                //delete dialogues of the quickblox merchants
+                if (quickBloxDialogueResponse != null)
+                {
+                    foreach (var dialogue in quickBloxDialogueResponse.Items)
+                    {
+                        quickBloxService.DeleteDialogue(dialogue.Id, session.Token);
+                    }
+                }
+            }
+        }
+
         #region private methods
+
+        public async Task<List<Location>> GetLocations()
+        {
+            logger.LogInformation("Getting locations");
+
+            using (var reader = await s3BucketService.GetS3StreamReader(Constants.LocationsS3Path))
+            {
+                using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+                {
+                    var locations = csv.GetRecords<Location>().ToList();
+
+                    return locations;
+                }
+            }
+
+        }
+
+        public Location GetRandomLocation(List<Location> locations)
+        {
+            var random = new Random();
+            int index = random.Next(locations.Count);
+
+            return locations[index];
+        }
 
         private async Task InsertMerchants(MerchantRequestModel merchantRequest, CommonResponseModel responseModel)
         {
+            var locations = await GetLocations();
             if (merchantRequest.TotalRecords > 0)
             {
                 for (int i = 1; i <= merchantRequest.TotalRecords; i++)
@@ -100,6 +139,7 @@ namespace LocalChachaAdminApi.Core.Services
                     var mobileNumber = i == 1 ? merchantRequest.Mobile : GetNextNumber(merchantRequest.Mobile, i);
                     var email = i == 1 ? merchantRequest.Email : GetNewEmailId(merchantRequest.Email, i);
                     var fullName = i == 1 ? merchantRequest.FullName : $"{merchantRequest.FullName} {i}";
+                    var location = GetRandomLocation(locations);
 
                     var merchant = new
                     {
@@ -110,8 +150,8 @@ namespace LocalChachaAdminApi.Core.Services
                         mobile = mobileNumber,
                         type = merchantRequest.Type,
                         address = merchantRequest.Address,
-                        lat = merchantRequest.Latitude,
-                        longitude = merchantRequest.Longitude,
+                        lat = location.Latitude,
+                        longitude = location.Longitude,
                         loginType = merchantRequest.LoginType,
                         description = merchantRequest.Description,
                         inviteCode = merchantRequest.InviteCode,
